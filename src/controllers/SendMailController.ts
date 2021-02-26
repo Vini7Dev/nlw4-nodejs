@@ -25,25 +25,25 @@ class SendMailController {
         if(!findedSurvey) {
             return response.json({ error: 'Survey not found.' }).status(404);
         }
+        
+        const npsPath = path.resolve(__dirname, '..', 'views', 'emails', 'npsMail.hbs');
+
+        const surveyAlreadExists = await surveysUsersRepository.findOne({
+            where: { user_id: findedUser.id, value: null },
+            relations: ['user', 'survey'],
+        });
 
         const variables = {
             name: findedUser.name,
             title: findedSurvey.title,
             description: findedSurvey.description,
-            user_id: findedUser.id,
+            id: '',
             link: process.env.URL_MAIL,
         }
-        
-        const npsPath = path.resolve(__dirname, '..', 'views', 'emails', 'npsMail.hbs');
-
-        const surveyAlreadExists = await surveysUsersRepository.findOne({
-            where: [
-                { user_id: findedUser.id }, { value: null },
-            ],
-            relations: ['user', 'survey'],
-        });
 
         if(surveyAlreadExists) {
+            variables.id = surveyAlreadExists.id;
+
             await SendMailService.execute(email, findedSurvey.title, variables, npsPath);
             
             return response.json(surveyAlreadExists).status(201);
@@ -55,6 +55,8 @@ class SendMailController {
 
             const savedSurveyUser = await surveysUsersRepository.save(createdSurveyUser);
             
+            variables.id = savedSurveyUser.id;
+
             await SendMailService.execute(email, findedSurvey.title, variables, npsPath);
 
             return response.json(savedSurveyUser).status(201);
