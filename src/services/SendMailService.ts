@@ -18,7 +18,7 @@ class SendMailService {
             });
 
             this.client = transporter;
-        });
+        }).catch(error => console.log(error));
     }
 
     public async execute(to: string, subject: string, variables: object, path: string) {
